@@ -4,7 +4,7 @@
 ใช้ได้ทั้งมือถือ (1 คอลัมน์) และจอคอม (2 คอลัมน์ ตั้งแต่ 1024px)
 Express + PostgreSQL + Vanilla JS + Bootstrap 5 (Dark Mode, Mobile-First)
 
-GitHub: `<ใส่ลิงก์ repo ของคุณ>`
+GitHub: `https://github.com/Npunkubpom/mini-project-ce306.git`
 
 ## ฟีเจอร์
 
