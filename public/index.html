@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1014">
+  <title>Gym Log Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="app container-fluid py-3">
+
+    <!-- ===================== Auth ===================== -->
+    <section id="auth-view" class="view" hidden>
+      <header class="brand">
+        <span class="brand-icon" aria-hidden="true">🏋️</span>
+        <h1>Gym Log Tracker</h1>
+        <p class="muted">จดน้ำหนักและท่าเล่นให้เร็วที่สุดระหว่างเล่น</p>
+      </header>
+
+      <div class="card">
+        <div class="segmented" role="group" aria-label="เลือกโหมด">
+          <button type="button" id="tab-login" class="segment" aria-pressed="true">เข้าสู่ระบบ</button>
+          <button type="button" id="tab-register" class="segment" aria-pressed="false">สมัครสมาชิก</button>
+        </div>
+
+        <form id="auth-form" novalidate>
+          <div class="field" id="name-field" hidden>
+            <label for="name">ชื่อ</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="100">
+          </div>
+          <div class="field">
+            <label for="email">อีเมล</label>
+            <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required>
+          </div>
+          <div class="field">
+            <label for="password">รหัสผ่าน</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required>
+            <small class="muted" id="password-hint" hidden>อย่างน้อย 8 ตัวอักษร</small>
+          </div>
+          <p id="auth-error" class="error" role="alert"></p>
+          <button type="submit" id="auth-submit" class="btn btn-primary btn-block">เข้าสู่ระบบ</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= App (หลังล็อกอิน) ================= -->
+    <section id="tracker-view" class="view" hidden>
+      <header class="topbar">
+        <div>
+          <h1 class="topbar-title" id="page-title">วันนี้</h1>
+          <p class="muted" id="today-label"></p>
+        </div>
+        <div class="topbar-user">
+          <span id="user-name" class="user-name"></span>
+          <span id="admin-badge" class="role-badge" hidden>ADMIN</span>
+          <button type="button" id="logout-btn" class="btn btn-ghost">ออก</button>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="เมนูหลัก">
+        <a href="#/today" class="tab" data-page="today">วันนี้</a>
+        <a href="#/history" class="tab" data-page="history">ประวัติ</a>
+        <a href="#/exercises" class="tab" data-page="exercises">ท่าเล่น</a>
+        <a href="#/body" class="tab" data-page="body">ร่างกาย</a>
+        <a href="#/admin" class="tab" data-page="admin" id="tab-admin" hidden>Admin</a>
+      </nav>
+
+      <!-- ======================= วันนี้ ======================= -->
+      <section id="page-today" class="page" data-title="วันนี้">
+        <!-- เลือกท่า + ประวัติครั้งล่าสุด -->
+        <section class="card" aria-labelledby="sec-exercise">
+          <h2 id="sec-exercise">ท่าเล่น</h2>
+          <div class="field">
+            <label for="exercise" class="sr-only">เลือกท่าเล่น</label>
+            <select id="exercise"></select>
+          </div>
+
+          <div id="last-log" class="last-log" aria-live="polite" hidden>
+            <p class="last-log-title" id="last-log-title"></p>
+            <div class="chips" id="last-log-chips"></div>
+          </div>
+        </section>
+
+        <!-- สรุปฝึกวันนี้ -->
+        <section class="card" aria-labelledby="sec-summary">
+          <div class="card-head">
+            <h2 id="sec-summary">สรุปฝึกวันนี้</h2>
+            <span class="badge" id="session-count-badge">0 ท่า</span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat"><span class="stat-label">เซ็ต</span><strong id="summary-sets">0</strong></div>
+            <div class="stat"><span class="stat-label">ครั้งรวม</span><strong id="summary-reps">0</strong></div>
+            <div class="stat"><span class="stat-label">ปริมาณ</span><strong id="summary-volume">0 kg</strong></div>
+            <div class="stat"><span class="stat-label">ท่ามากสุด</span><strong id="summary-best">-</strong></div>
+          </div>
+        </section>
+
+        <!-- ฟอร์มบันทึกเซต -->
+        <section class="card" aria-labelledby="sec-form">
+          <h2 id="sec-form">บันทึกเซต</h2>
+          <form id="set-form" novalidate>
+            <div class="field">
+              <label for="set-number">เซตที่ (Set #)</label>
+              <div class="stepper">
+                <button type="button" class="step-btn" data-target="set-number" data-step="-1" aria-label="ลด 1 เซต">−</button>
+                <input id="set-number" type="number" inputmode="numeric" min="1" max="100" step="1" value="1" required>
+                <button type="button" class="step-btn" data-target="set-number" data-step="1" aria-label="เพิ่ม 1 เซต">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="weight">น้ำหนัก (kg)</label>
+              <div class="stepper">
+                <button type="button" class="step-btn" data-target="weight" data-step="-2.5" aria-label="ลด 2.5 กิโลกรัม">−</button>
+                <input id="weight" type="number" inputmode="decimal" min="0" max="1000" step="0.5" placeholder="0" required>
+                <button type="button" class="step-btn" data-target="weight" data-step="2.5" aria-label="เพิ่ม 2.5 กิโลกรัม">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="reps">จำนวนครั้ง (Reps)</label>
+              <div class="stepper">
+                <button type="button" class="step-btn" data-target="reps" data-step="-1" aria-label="ลด 1 ครั้ง">−</button>
+                <input id="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" placeholder="0" required>
+                <button type="button" class="step-btn" data-target="reps" data-step="1" aria-label="เพิ่ม 1 ครั้ง">+</button>
+              </div>
+            </div>
+            <button type="submit" id="add-set-btn" class="btn btn-primary btn-block btn-lg">＋ เพิ่มเซต</button>
+          </form>
+          <div class="field rest-setting">
+            <label for="rest-select">⏱ เวลาพักหลังกด ✔</label>
+            <select id="rest-select">
+              <option value="30">30 วินาที</option>
+              <option value="60">1 นาที</option>
+              <option value="90">1 นาที 30 วินาที</option>
+              <option value="120">2 นาที</option>
+              <option value="180">3 นาที</option>
+              <option value="240">4 นาที</option>
+              <option value="300">5 นาที</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- ตารางเซตของวันนี้ -->
+        <section class="card" aria-labelledby="sec-sets">
+          <div class="card-head">
+            <h2 id="sec-sets">เซตวันนี้</h2>
+            <span class="badge" id="sets-summary">0/0</span>
+          </div>
+          <p id="sets-empty" class="muted empty">ยังไม่มีเซต เลือกท่าแล้วเพิ่มเซตแรกได้เลย</p>
+          <div class="table-wrap">
+            <table id="sets-table" hidden>
+              <thead>
+                <tr>
+                  <th scope="col">ท่า</th>
+                  <th scope="col" class="num">เซต</th>
+                  <th scope="col">กก.</th>
+                  <th scope="col">ครั้ง</th>
+                  <th scope="col"><span class="sr-only">การทำงาน</span></th>
+                </tr>
+              </thead>
+              <tbody id="sets-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- โน้ตวันนี้ -->
+        <section class="card" aria-labelledby="sec-notes">
+          <div class="card-head">
+            <h2 id="sec-notes">โน้ตวันนี้</h2>
+            <span class="muted small" id="notes-status"></span>
+          </div>
+          <label for="today-notes" class="sr-only">โน้ตวันนี้</label>
+          <textarea id="today-notes" rows="3" maxlength="2000" placeholder="เช่น นอนน้อย แรงตก / เจ็บไหล่ซ้าย / วันนี้ PR!"></textarea>
+        </section>
+      </section>
+
+      <!-- ======================= ประวัติ ======================= -->
+      <section id="page-history" class="page" data-title="ประวัติ" hidden>
+        <section class="card" aria-labelledby="sec-overview">
+          <h2 id="sec-overview">ภาพรวมทั้งหมด</h2>
+          <div class="stats-grid">
+            <div class="stat"><span class="stat-label">เข้ายิม</span><strong id="hs-sessions">0</strong></div>
+            <div class="stat"><span class="stat-label">7 วันล่าสุด</span><strong id="hs-7d">0</strong></div>
+            <div class="stat"><span class="stat-label">เซตที่เล่นเสร็จ</span><strong id="hs-sets">0</strong></div>
+            <div class="stat"><span class="stat-label">ปริมาณรวม</span><strong id="hs-volume">0 kg</strong></div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="sec-progress">
+          <h2 id="sec-progress">กราฟพัฒนาการ</h2>
+          <div class="field">
+            <label for="progress-exercise" class="sr-only">เลือกท่าสำหรับกราฟ</label>
+            <select id="progress-exercise"></select>
+          </div>
+          <div class="segmented segmented-3" role="group" aria-label="ค่าที่แสดงในกราฟ">
+            <button type="button" class="segment" data-metric="max_weight" aria-pressed="true">น้ำหนักสูงสุด</button>
+            <button type="button" class="segment" data-metric="est_1rm" aria-pressed="false">1RM (ประมาณ)</button>
+            <button type="button" class="segment" data-metric="volume" aria-pressed="false">ปริมาณ</button>
+          </div>
+          <div id="progress-chart" class="chart" aria-live="polite"></div>
+          <p class="muted small" id="progress-caption"></p>
+        </section>
+
+        <section class="card" aria-labelledby="sec-prs">
+          <div class="card-head">
+            <h2 id="sec-prs">สถิติส่วนตัว (PR)</h2>
+            <span class="badge" id="pr-count">0 ท่า</span>
+          </div>
+          <div id="pr-list" class="list"></div>
+        </section>
+
+        <section class="card" aria-labelledby="sec-sessions">
+          <h2 id="sec-sessions">ประวัติการเล่น</h2>
+          <div id="session-list" class="list"></div>
+          <button type="button" id="more-sessions" class="btn btn-secondary btn-block" hidden>โหลดเพิ่ม</button>
+        </section>
+      </section>
+
+      <!-- ======================= ท่าเล่น ======================= -->
+      <section id="page-exercises" class="page" data-title="ท่าเล่น" hidden>
+        <section class="card" aria-labelledby="sec-my-ex">
+          <h2 id="sec-my-ex">เพิ่มท่าของฉัน</h2>
+          <p class="muted small form-hint">ท่าที่เพิ่มเองจะเห็นเฉพาะบัญชีของคุณ</p>
+          <form id="my-ex-form" class="ex-form" novalidate></form>
+        </section>
+        <section class="card" aria-labelledby="sec-all-ex">
+          <div class="card-head">
+            <h2 id="sec-all-ex">ท่าเล่นทั้งหมด</h2>
+            <span class="badge" id="ex-count">0</span>
+          </div>
+          <div class="field">
+            <label for="ex-search" class="sr-only">ค้นหาท่า</label>
+            <input id="ex-search" type="search" placeholder="ค้นหาท่า…" autocomplete="off">
+          </div>
+          <div id="ex-list" class="list"></div>
+        </section>
+      </section>
+
+      <!-- ======================= ร่างกาย ======================= -->
+      <section id="page-body" class="page" data-title="ร่างกาย" hidden>
+        <section class="card" aria-labelledby="sec-body-latest">
+          <div class="card-head">
+            <h2 id="sec-body-latest">ค่าล่าสุด</h2>
+            <span class="badge" id="body-latest-date">-</span>
+          </div>
+          <div class="stats-grid" id="body-latest"></div>
+        </section>
+
+        <section class="card" aria-labelledby="sec-body-form">
+          <h2 id="sec-body-form">บันทึกค่าร่างกาย</h2>
+          <p class="muted small form-hint">กรอกเฉพาะค่าที่วัดได้ ถ้าบันทึกวันเดิมซ้ำ ระบบจะแทนค่าเดิมของวันนั้น</p>
+          <form id="body-form" class="ex-form" novalidate>
+            <div class="field full">
+              <label for="body-date">วันที่วัด</label>
+              <input id="body-date" type="date" required>
+            </div>
+            <div class="field full">
+              <label for="body-weight">น้ำหนักตัว (kg)</label>
+              <input id="body-weight" type="number" inputmode="decimal" min="20" max="300" step="0.1" placeholder="เช่น 70.5">
+            </div>
+            <div class="field">
+              <label for="body-fat">%ไขมัน (%)</label>
+              <input id="body-fat" type="number" inputmode="decimal" min="2" max="70" step="0.1" placeholder="เช่น 18.5">
+            </div>
+            <div class="field">
+              <label for="body-muscle">มวลกล้ามเนื้อ (kg)</label>
+              <input id="body-muscle" type="number" inputmode="decimal" min="5" max="150" step="0.1" placeholder="เช่น 32.4">
+            </div>
+            <div class="form-actions">
+              <button type="submit" id="body-submit" class="btn btn-primary">บันทึก</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="sec-body-chart">
+          <h2 id="sec-body-chart">กราฟค่าร่างกาย</h2>
+          <div class="segmented segmented-3" role="group" aria-label="ค่าที่แสดงในกราฟ">
+            <button type="button" class="segment" data-body-metric="body_fat_pct" aria-pressed="true">%ไขมัน</button>
+            <button type="button" class="segment" data-body-metric="muscle_mass_kg" aria-pressed="false">มวลกล้ามเนื้อ</button>
+            <button type="button" class="segment" data-body-metric="weight_kg" aria-pressed="false">น้ำหนักตัว</button>
+          </div>
+          <div id="body-chart" class="chart" aria-live="polite"></div>
+          <p class="muted small" id="body-caption"></p>
+        </section>
+
+        <section class="card" aria-labelledby="sec-body-list">
+          <div class="card-head">
+            <h2 id="sec-body-list">ประวัติการวัด</h2>
+            <span class="badge" id="body-count">0 ครั้ง</span>
+          </div>
+          <div id="body-list" class="list"></div>
+        </section>
+      </section>
+
+      <!-- ======================= Admin ======================= -->
+      <section id="page-admin" class="page" data-title="ผู้ดูแลระบบ" hidden>
+        <section class="card" aria-labelledby="sec-admin-stats">
+          <h2 id="sec-admin-stats">ภาพรวมระบบ</h2>
+          <div class="stats-grid stats-grid-3" id="admin-stats"></div>
+        </section>
+        <section class="card" aria-labelledby="sec-admin-top">
+          <h2 id="sec-admin-top">ท่ายอดนิยม</h2>
+          <div id="admin-top" class="list"></div>
+        </section>
+        <section class="card" aria-labelledby="sec-admin-users">
+          <div class="card-head">
+            <h2 id="sec-admin-users">ผู้ใช้งาน</h2>
+            <span class="badge" id="admin-user-count">0</span>
+          </div>
+          <div class="field">
+            <label for="user-search" class="sr-only">ค้นหาผู้ใช้</label>
+            <input id="user-search" type="search" placeholder="ค้นหาชื่อหรืออีเมล…" autocomplete="off">
+          </div>
+          <div id="admin-users" class="list"></div>
+        </section>
+        <section class="card" aria-labelledby="sec-admin-ex">
+          <h2 id="sec-admin-ex">จัดการท่ากลาง</h2>
+          <p class="muted small form-hint">ท่ากลางทุกคนเห็น ท่าที่มีประวัติการเล่นแล้วลบไม่ได้ แต่แก้ไขได้</p>
+          <form id="admin-ex-form" class="ex-form" novalidate></form>
+          <div id="admin-ex-list" class="list"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <!-- Floating Rest Timer -->
+  <div id="rest-timer" class="rest-timer" role="timer" aria-live="off" hidden>
+    <div class="rest-head">
+      <span class="rest-label" id="rest-label">พักเซต</span>
+      <button type="button" id="rest-close" class="rest-close" aria-label="ปิดตัวจับเวลา">✕</button>
+    </div>
+    <div class="rest-time" id="rest-time">01:30</div>
+    <div class="rest-bar" aria-hidden="true"><div class="rest-bar-fill" id="rest-bar-fill"></div></div>
+    <div class="rest-actions">
+      <button type="button" class="btn btn-secondary" id="rest-minus">−15 วิ</button>
+      <button type="button" class="btn btn-secondary" id="rest-plus">+15 วิ</button>
+      <button type="button" class="btn btn-secondary" id="rest-skip">ข้าม</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

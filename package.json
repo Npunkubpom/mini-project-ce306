@@ -1,0 +1,26 @@
+{
+  "name": "gym-log-tracker",
+  "version": "2.0.0",
+  "description": "Gym Log Tracker - ระบบจดบันทึกน้ำหนักและท่าเล่นยิม พร้อมประวัติ กราฟพัฒนาการ และหน้า Admin (Express + PostgreSQL + Vanilla JS)",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed:demo": "node scripts/seed-demo.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1"
+  }
+}
